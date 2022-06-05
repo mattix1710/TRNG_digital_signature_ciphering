@@ -334,7 +334,7 @@ class TRNG:
         self.__postprocessingHistogram()
         self.__getPostprocessingEntropy()
 
-    def getRandom(self):
+    def getRandom(self, keySize = 4096):
         #TEMP: tutaj ustalamy jakieś wartości??
 
         self.__gatherImgs()
@@ -343,16 +343,21 @@ class TRNG:
         self.__postprocessing()
         self.__getPostprocessingEntropy()
 
-        output = flattenList(self.out)
-
-
+        #output = flattenList(self.out)
+        maxRange = math.floor(keySize/8)
+        print("maxRange {}".format(maxRange))
+        outputFlatten = flattenList(self.out)
+        print("output LEN: {}".format(len(outputFlatten[0:maxRange])))
+        print(outputFlatten[0:maxRange])
+        outputNumber = concatBinary(outputFlatten[0:maxRange])
+        #print("outputNum {}".format(outputNumber))
 
         # flush saved self input and output - clear storage
         self.img = []
         self.Z = []
         self.out = []
         # and return the output
-        return output
+        return outputNumber
 
 ##########################################
 # OTHER FUNCTIONS
@@ -369,7 +374,7 @@ def flattenList(list = []):
 def concatBinary(arr):
     counter = len(arr) - 1
     concat = 0
-    for i in range(len(arr)):
-        concat = arr[i] << (counter * 8) | concat
+    for it in arr:
+        concat = (it << (counter * 8)) | concat
         counter -= 1
     return concat

@@ -49,4 +49,4 @@ keySize = 4096
 
 num = gen1.getRandom()
 
-entropyCount(num)
+print(num)
