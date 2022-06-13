@@ -52,17 +52,17 @@ for i in range(100000):
 
 counter = 1
 
-aux = concatBinary(arr[0:8])
-print(aux.bit_length())
+# aux = concatBinary(arr[0:8])
+# print(aux.bit_length())
 
-# for i in range(1000):
-#     aux = concatBinary(arr[i:(i+8)])                        #(i+num) <- num indicates how many bytes has a number (i.e. 8*8 = 64 bits = 8 bytes)
-#     print("NUM.{} processing ".format(i) + str(aux))
-#     #start = time.time()
-#     if(is_prime(aux)):
-#         stop = time.time()
-#         print("PRIME_{}: ".format(counter) + str(aux))
-#         #print("time elapsed {}: ".format(i) + str(stop - start))
-#         counter += 1
+for i in range(1000):
+    aux = concatBinary(arr[i:(i+8)])                        #(i+num) <- num indicates how many bytes has a number (i.e. 8*8 = 64 bits = 8 bytes)
+    print("NUM.{} processing ".format(i) + str(aux))
+    #start = time.time()
+    if(is_prime(aux)):
+        stop = time.time()
+        print("PRIME_{}: ".format(counter) + str(aux))
+        #print("time elapsed {}: ".format(i) + str(stop - start))
+        counter += 1
 
 #print(concatBinary(arr[0:32]))

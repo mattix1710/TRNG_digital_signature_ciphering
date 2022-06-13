@@ -3,6 +3,9 @@
 #
 
 import math
+import os
+from Crypto.PublicKey import RSA
+from numpy import byte
 from TRNgenClass import *
 
 def entropyCount(arr):
@@ -47,6 +50,29 @@ gen1 = TRNG()
 
 keySize = 4096
 
-num = gen1.getRandom()
+num = gen1.setRandom()
 
-print(num)
+print(gen1.getRandomList())
+#print(gen1.getRandomList())
+
+# Traceback (most recent call last):
+#   File "d:\GitHub\TRNG_digital_signature_ciphering\pySignatureTRNG.py", line 58, in <module>
+#     key = RSA.generate(keySize, gen1.getRandomList(bytes=math.floor(keySize/8)))
+#   File "C:\Users\MATI\AppData\Local\Programs\Python\Python310\lib\site-packages\Crypto\PublicKey\RSA.py", line 448, in generate
+#     p = generate_probable_prime(exact_bits=size_p,
+#   File "C:\Users\MATI\AppData\Local\Programs\Python\Python310\lib\site-packages\Crypto\Math\Primality.py", line 330, in generate_probable_prime
+#     candidate = Integer.random(exact_bits=exact_bits,
+#   File "C:\Users\MATI\AppData\Local\Programs\Python\Python310\lib\site-packages\Crypto\Math\_IntegerBase.py", line 338, in random
+#     msb = bord(randfunc(1)[0])
+# TypeError: 'list' object is not callable
+
+key = RSA.generate(keySize, gen1.getRandomList(bytes=math.floor(keySize/8)))
+
+exportedKey = key.export_key(pkcs=8)
+
+print(exportedKey)
+
+# num = os.urandom(4096)
+# print(num)
+# print("")
+# print(bin(num[0]))

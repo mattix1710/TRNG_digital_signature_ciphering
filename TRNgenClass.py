@@ -20,6 +20,9 @@ class TRNG:
                 frameHeight = 100,
                 MAX_IMG_QUANTITY = 1) -> None:
 
+        self.isProceeded = False                      #used when taking bytes of data
+        self.iterator = 0
+
         self.usedCamera = usedCamera
         self.frameWidth = frameWidth
         self.frameHeight = frameHeight
@@ -334,30 +337,68 @@ class TRNG:
         self.__postprocessingHistogram()
         self.__getPostprocessingEntropy()
 
-    def getRandom(self, keySize = 4096):
+    #setRandom() used for generation of new random set of data
+    def setRandom(self, keySize = 4096):
         #TEMP: tutaj ustalamy jakieś wartości??
 
+        ########################
+        # calling methods needed to generate random string of data
+        #
         self.__gatherImgs()
         self.__preprocessing()
         self.__getPreprocessingEntropy()
         self.__postprocessing()
         self.__getPostprocessingEntropy()
 
+        self.isProceeded = True
+        self.iterator = 0
+
         #output = flattenList(self.out)
         maxRange = math.floor(keySize/8)
-        print("maxRange {}".format(maxRange))
+        # print("maxRange {}".format(maxRange))
         outputFlatten = flattenList(self.out)
-        print("output LEN: {}".format(len(outputFlatten[0:maxRange])))
-        print(outputFlatten[0:maxRange])
+        # print("output LEN: {}".format(len(outputFlatten[0:maxRange])))
+        # print(outputFlatten[0:maxRange])
         outputNumber = concatBinary(outputFlatten[0:maxRange])
         #print("outputNum {}".format(outputNumber))
+
+        #flatten whole out array
+        self.out = outputFlatten
 
         # flush saved self input and output - clear storage
         self.img = []
         self.Z = []
-        self.out = []
+        # self.out = []             # <-- DO NOT FLUSH IT YET!!!
         # and return the output
         return outputNumber
+
+    #getRandom() used for retrieving parts of generated string cyclically
+    def getRandom(self, keySize = 4096):
+        if(self.isProceeded == False):
+            self.iterator = 0
+
+        maxRange = math.floor(keySize/8)
+        outputFlatten = flattenList(self.out)
+        output = concatBinary(outputFlatten[(self.iterator*maxRange):(self.iterator*maxRange+maxRange)])
+        print("output:", str(output))
+
+        self.iterator += 1          #increment iterator
+        return output
+
+    def getRandomList(self, bytes = 512):
+        #num of bits: bytes*8, i.e. bytes = 512 -> 4096 bits
+        return self.out[0:bytes]
+
+    def getListLen(self):
+        return len(self.out)
+
+    #flushes all the saved data and resetes to initial states
+    def reset(self):
+        self.img = []
+        self.Z = []
+        self.out = []
+        self.iterator = 0
+        self.isProceeded = False
 
 ##########################################
 # OTHER FUNCTIONS
