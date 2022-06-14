@@ -350,9 +350,6 @@ class TRNG:
         self.__postprocessing()
         self.__getPostprocessingEntropy()
 
-        self.isProceeded = True
-        self.iterator = 0
-
         #output = flattenList(self.out)
         maxRange = math.floor(keySize/8)
         # print("maxRange {}".format(maxRange))
@@ -377,13 +374,20 @@ class TRNG:
         if(self.isProceeded == False):
             self.iterator = 0
 
+        self.isProceeded = True
+
         maxRange = math.floor(keySize/8)
-        outputFlatten = flattenList(self.out)
-        output = concatBinary(outputFlatten[(self.iterator*maxRange):(self.iterator*maxRange+maxRange)])
-        print("output:", str(output))
+        outputFlatten = self.out
+        if((self.iterator*maxRange+maxRange) <= len(outputFlatten)):
+            print('concatenating...')
+            output = concatBinary(outputFlatten[(self.iterator*maxRange):(self.iterator*maxRange+maxRange)])
+        else:
+            print('ERROR!')
+            output = -1
+        #print("output:", str(output))
 
         self.iterator += 1          #increment iterator
-        return output
+        return bytes(output)
 
     def getRandomList(self, bytes = 512):
         #num of bits: bytes*8, i.e. bytes = 512 -> 4096 bits
