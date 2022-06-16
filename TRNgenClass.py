@@ -370,7 +370,7 @@ class TRNG:
         return outputNumber
 
     #getRandom() used for retrieving parts of generated string cyclically
-    def getRandom(self, keySize = 4096):
+    def getRandom(self, keySize = 4096//8):
         if(self.isProceeded == False):
             self.iterator = 0
 
