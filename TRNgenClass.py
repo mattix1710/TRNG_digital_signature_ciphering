@@ -1,16 +1,10 @@
+#GENERATOR CLASS
 #all the important imports for the class to work properly
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-#import copy
 import math
-
-#used for convertting output (64bit -> 32bit -> 8bit values)
 import struct
-
-#used for converting output (64bit -> 32bit -> 8bit values)
-def binary(num, typ = 'd'):
-    return ''.join('{:0>8b}'.format(c) for c in struct.pack('!{}'.format(typ), num))
 
 class TRNG:
     ######### INIT #########
@@ -338,9 +332,7 @@ class TRNG:
         self.__getPostprocessingEntropy()
 
     #setRandom() used for generation of new random set of data
-    def setRandom(self, keySize = 4096):
-        #TEMP: tutaj ustalamy jakieś wartości??
-
+    def setRandom(self):
         ########################
         # calling methods needed to generate random string of data
         #
@@ -350,49 +342,45 @@ class TRNG:
         self.__postprocessing()
         self.__getPostprocessingEntropy()
 
-        #output = flattenList(self.out)
-        maxRange = math.floor(keySize/8)
-        # print("maxRange {}".format(maxRange))
-        outputFlatten = flattenList(self.out)
-        # print("output LEN: {}".format(len(outputFlatten[0:maxRange])))
-        # print(outputFlatten[0:maxRange])
-        outputNumber = concatBinary(outputFlatten[0:maxRange])
-        #print("outputNum {}".format(outputNumber))
-
         #flatten whole out array
-        self.out = outputFlatten
+        self.out = flattenList(self.out)
+        #and reset the iterator
+        self.iterator = 0
 
         # flush saved self input and output - clear storage
         self.img = []
         self.Z = []
         # self.out = []             # <-- DO NOT FLUSH IT YET!!!
-        # and return the output
-        return outputNumber
 
     #getRandom() used for retrieving parts of generated string cyclically
-    def getRandom(self, keySize = 4096//8):
-        if(self.isProceeded == False):
-            self.iterator = 0
+    def getRandom(self, byteSize = 128):
+        #some info
+        #print("ITERATOR: {}; BYTESIZE: {}".format(self.iterator, byteSize))
 
-        self.isProceeded = True
+        output = bytes(self.out)
 
-        maxRange = math.floor(keySize/8)
-        outputFlatten = self.out
-        if((self.iterator*maxRange+maxRange) <= len(outputFlatten)):
-            print('concatenating...')
-            output = concatBinary(outputFlatten[(self.iterator*maxRange):(self.iterator*maxRange+maxRange)])
-        else:
-            print('ERROR!')
-            output = -1
-        #print("output:", str(output))
+        #if number of bytes left to use is lower than number of bytes requested
+        if(len(output)-byteSize <= self.iterator):
+            self.setRandom()
 
-        self.iterator += 1          #increment iterator
-        return bytes(output)
+        output = output[self.iterator:(self.iterator+byteSize)]
 
+        #INFO - in theory not needed any exception throws...
+
+        #1st iteration ->> iterator+byteSize
+        self.iterator += byteSize           #increment iterator of byteSize <-- better performance than iterator+1
+
+        return output
+    #
+    # END getRandom()
+    #======================================================
+
+    #TODO REMOVE
     def getRandomList(self, bytes = 512):
         #num of bits: bytes*8, i.e. bytes = 512 -> 4096 bits
         return self.out[0:bytes]
 
+    #TODO REMOVE
     def getListLen(self):
         return len(self.out)
 
@@ -404,9 +392,27 @@ class TRNG:
         self.iterator = 0
         self.isProceeded = False
 
+    def resetIterator(self):
+        self.iterator = 0
+
 ##########################################
 # OTHER FUNCTIONS
 
+"""
+    flattenList(list)
+    ==================
+    flatten multidimentional list into one dimension
+
+    -----------
+     arguments
+    -----------
+    * list - list type storing x-dimentional array
+
+    --------
+     output
+    --------
+    * list type with changed dimensions from xD to 1D
+"""
 def flattenList(list = []):
     auxList = []
 
@@ -416,10 +422,23 @@ def flattenList(list = []):
 
     return auxList
 
-def concatBinary(arr):
-    counter = len(arr) - 1
-    concat = 0
-    for it in arr:
-        concat = (it << (counter * 8)) | concat
-        counter -= 1
-    return concat
+"""
+    binary(num, typ)
+    =================
+    changes binary representation of a variable
+
+    -----------
+     arguments
+    -----------
+    * num - a number thats binary representation will be changed
+    * typ - (character type) defining type of a num variable (i.e. short/int/long/double/char) 
+            --> more here: https://docs.python.org/2/library/struct.html
+    
+    --------
+     output
+    --------
+    * variable with changed binary representation (i.e. 32bit to 8bit)
+"""
+#used for converting output (64bit -> 32bit -> 8bit values)
+def binary(num, typ = 'd'):
+    return ''.join('{:0>8b}'.format(c) for c in struct.pack('!{}'.format(typ), num))
