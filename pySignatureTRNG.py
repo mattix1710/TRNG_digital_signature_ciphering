@@ -1,7 +1,3 @@
-#
-# TODO: konkatenacja keySize/8 elementów w jeden długi ciąg o wielkości (ilości bitów) = keySize
-#
-
 import math
 import os
 from Crypto.PublicKey import RSA

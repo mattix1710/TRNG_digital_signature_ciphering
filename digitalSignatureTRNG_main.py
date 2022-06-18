@@ -1,116 +1,457 @@
 # all the important imports:
 #----------------------------
-from email import message
-from msilib import schema
-
-from matplotlib.pyplot import text
 from TRNgenClass import TRNG
+import time
 
 import kivy
 kivy.require('2.1.0')
 from kivy.app import App
 from kivy.uix.gridlayout import GridLayout
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.uix.anchorlayout import AnchorLayout
+
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.graphics import Color, Rectangle, Line
 from kivy.core.window import Window
+from kivy.clock import Clock
+from kivy.uix.popup import Popup
+from kivy.uix.image import Image
+from kivy.uix.progressbar import ProgressBar
+from kivy.uix.togglebutton import ToggleButton
 
-class MyMainApp(App):
+class DigitalSignatureTRNGApp(App):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.iterator = 0
+        self.ifClicked = False
+        self.returned = False
+        self.wiadomosc = ''
+        self.keySize = 1024
+        self.originalInput = TextInput()
+        self.receivedInput = TextInput()
+        self.origPublicKey = ""
+        self.currentPublicKey = ""
+
     def build(self):
         #returns a window object with all it's widgets
         self.icon = r'images/appIco.png'
-        self.window = self.getGridLayout(Window.size) # GridLayout()
-        # self.window.cols = 1
-        # self.window.size_hint = (0.6, 0.7)
-        # self.window.pos_hint = {"center_x": 0.5, "center_y":0.5}
-
-        # # label widget
-        # self.title = 'Digital Signature demonstration'
-
-
-        # self.titleName = Label(
-        #                 text= "Digital Signature demonstration",
-        #                 font_size= 18,
-        #                 color= '#00FFCE'
-        #                 )
-        # self.window.add_widget(self.titleName)
-
-        # self.inputDisplay = Label(text = "", font_size = 10, color='#10FFCE')
-
-        # self.window.add_widget(self.inputDisplay)
-
-        # #TEXT INPUT window
-        # self.input = TextInput(
-        #     padding_y= (10,10),
-        #     padding_x= (10,10),
-        #     size_hint= (1, 0.5)
-        # )
-
-
-        # self.window.add_widget(self.input)
-
-        # # button widget
-        # self.button = Button(
-        #               text= "GREET",
-        #               size_hint= (1,0.5),
-        #               bold= True,
-        #               background_color ='#00FFCE',
-        #               #remove darker overlay of background colour
-        #               # background_normal = ""
-        #               )
-        # self.button.bind(on_press=self.callback)
-        # self.window.add_widget(self.button)
+        self.window = self.layoutGUI() # GridLayout()
+        #Clock.schedule_interval(self.getSize, 1/60)
 
         return self.window
 
-    def callback(self, instance):
-        # change label text to "Hello + user name!"
-        self.message.text = str(Window.size)
+    def layoutGUI(self):
+        TEXT_PADDING = 5
+        self.mainLayout = BoxLayout(orientation='vertical', padding=50)
+
+        """
+            layout RSA-generator section
+        """
+        self.RSAsection = BoxLayout(orientation='horizontal', size_hint=(1,0.3))
+
+        #############################
+        # button RSA GENERATOR section
+        #
+        step1 = Image(source=r'images/circle1_white.png')
+        stepGenBoxSection = BoxLayout(size_hint=(0.15,1))
+        stepGenBoxSection.add_widget(step1)
+
+        generatorButton = Button(
+            text = 'Generate RSA keys',
+            font_size = '20sp',
+            bold = True,
+            background_color = '#00FFCE'
+        )
+        genOptionsBoxSection = BoxLayout(orientation='vertical')
+        genOptionsBoxSection.add_widget(generatorButton)
+        
+        
+
+        genOptionsLabel = Label(
+            text = 'Key length (bits):',
+            font_size = '15sp',
+            color = '#b3b356'
+        )
+        genOptionsLabelBoxSection = BoxLayout(size_hint=(0.3,1))
+        genOptionsLabelBoxSection.add_widget(genOptionsLabel)
+
+        #============================
+        # TOGGLE BUTTON section
+        buttonFontSize = '14sp'
+
+        keySizeVals = [1024, 2048, 4096]
+        keyOption1 = ToggleButton(text=str(keySizeVals[0]), group='keySize', state='down', font_size=buttonFontSize)
+        keyOption1.bind(on_press=self.setKeySize)
+        keyOption2 = ToggleButton(text=str(keySizeVals[1]), group='keySize', font_size=buttonFontSize)
+        keyOption2.bind(on_press=self.setKeySize)
+        keyOption3 = ToggleButton(text=str(keySizeVals[2]), group='keySize', font_size=buttonFontSize)
+        keyOption3.bind(on_press=self.setKeySize)
+
+        genOptionsButtonsBoxSection = BoxLayout(size_hint=(0.7,1), padding = '15dp')
+        genOptionsButtonsBoxSection.add_widget(keyOption1)
+        genOptionsButtonsBoxSection.add_widget(keyOption2)
+        genOptionsButtonsBoxSection.add_widget(keyOption3)
+        #============================
 
 
-    def getGridLayout(self, windowSize):
-        mainLayout = GridLayout(cols = 1)
-        upperRowGrid = GridLayout(cols = 2)
+        optionsBoxSection = BoxLayout()
+        optionsBoxSection.add_widget(genOptionsLabelBoxSection)
+        optionsBoxSection.add_widget(genOptionsButtonsBoxSection)
 
-        # all the necessary labels to display
-        RSAGen = Label(
-            text='GENERUJ RSA', 
-            font_size=18, 
-            color='#00FFCE'
-            )
-        klucze = Label(text='KLUCZE', font_size=18, color='#00FFCE')
-        schemat = Button(
-                      text= "Klik",
-                      #size_hint= (1,0.5),
-                      size_hint=(None, None),
-                      height=0.1*Window.size[0],
-                      width=0.8*Window.size[1],
-                      bold= True,
-                      background_color ='#00FFCE',
-                      #remove darker overlay of background colour
-                      # background_normal = ""
-                      )
+        genOptionsBoxSection.add_widget(optionsBoxSection)
 
-        schemat.bind(on_press=self.callback)
 
-        self.message = TextInput(
-            padding_y= (10,10),
-            padding_x= (10,10),
-            size_hint= (1, 0.5),
-            text=str(Window.size)
+        genButtonBoxSection = BoxLayout(size_hint=(0.85,1))
+        genButtonBoxSection.add_widget(genOptionsBoxSection)
+
+
+        generatorBoxSection = BoxLayout()
+        generatorBoxSection.add_widget(stepGenBoxSection)
+        generatorBoxSection.add_widget(genButtonBoxSection)
+        #
+        #############################
+
+        #############################
+        # PROGRESS BAR section
+        #
+        displayProgressBar = ProgressBar(max=5)
+        displayProgressBar.value = 0
+
+        displayProgressLabel = Label(
+            text = 'NOT GENERATED YET',
+            font_size = '20sp',
+            color = '#00FF23'
         )
 
-        upperRowGrid.add_widget(RSAGen)
-        upperRowGrid.add_widget(klucze)
+        progressBarBoxSection = BoxLayout(orientation = 'vertical', padding = 10)
+        progressBarBoxSection.add_widget(displayProgressBar)
+        progressBarBoxSection.add_widget(displayProgressLabel)
+        #
+        #############################
 
-        mainLayout.add_widget(upperRowGrid)
-        mainLayout.add_widget(schemat)
-        mainLayout.add_widget(self.message)
+        #############################
+        # option BUTTONS section
+        #
+        copyPrivateButton = Button(
+            text = 'Copy PRIVATE key',
+            font_size = buttonFontSize,
+            bold = True,
+            background_color = '#90EE90'
+        )
+        copyPublicButton = Button(
+            text = 'Copy PUBLIC key',
+            font_size = buttonFontSize,
+            bold = True,
+            background_color = '#90EE90'
+        )
+        editPublicButton = Button(
+            text = 'Edit PUBLIC key',
+            font_size = buttonFontSize,
+            bold = True,
+            background_color = '#EE3333',
+            color = '#FF0000'
+        )
+        resetPublicButton = Button(
+            text = 'Reset PUBLIC key',
+            font_size = buttonFontSize,
+            bold = True,
+            background_color = '#00FFCE',
+            color = '#22FF22'
+        )
 
-        return mainLayout
+        editPublicButton.bind(on_press=self.editKeyPopUp)
+
+        buttonPadding = 5
+
+        firstButtonBoxSection = BoxLayout(padding = buttonPadding)
+        firstButtonBoxSection.add_widget(copyPrivateButton)
+
+        secondButtonBoxSection = BoxLayout(padding = buttonPadding)
+        secondButtonBoxSection.add_widget(editPublicButton)
+
+        thirdButtonBoxSection = BoxLayout(padding = buttonPadding)
+        thirdButtonBoxSection.add_widget(copyPublicButton)
+
+        fourthButtonBoxSection = BoxLayout(padding = buttonPadding)
+        fourthButtonBoxSection.add_widget(resetPublicButton)
+
+        buttonGridSection = GridLayout(cols = 2)
+        buttonGridSection.add_widget(firstButtonBoxSection)
+        buttonGridSection.add_widget(secondButtonBoxSection)
+        buttonGridSection.add_widget(thirdButtonBoxSection)
+        buttonGridSection.add_widget(fourthButtonBoxSection)
+
+        #
+        #############################
+
+        self.RSAsection.add_widget(generatorBoxSection)
+        self.RSAsection.add_widget(progressBarBoxSection)
+        self.RSAsection.add_widget(buttonGridSection)
+
+        """
+            layout MESSAGE section
+        """
+        self.messageSection = BoxLayout(orientation='vertical')
+
+        #============================
+        # ORIGINAL MESSAGE section
+        self.originalMessSection = BoxLayout(orientation='horizontal')
+        originalMessageInputSection = BoxLayout(orientation='horizontal', size_hint=(0.5,1))
+
+        step2 = Image(source=r'images/circle2_white.png')
+        self.originalInput = TextInput(
+            padding_y= (TEXT_PADDING, TEXT_PADDING),
+            padding_x= (TEXT_PADDING, TEXT_PADDING),
+            hint_text= 'Write your message')
+
+        originalLabel = Label(
+            text = 'Original message',
+            font_size = '20sp',
+            color = '#00FF23'
+        )
+
+        origMessStepBox = BoxLayout(size_hint=(0.15,1))
+        origMessStepBox.add_widget(step2)
+
+        origMessInputBox = BoxLayout(orientation='vertical', size_hint=(0.85,1))
+        origMessInputLabelBoxSection = BoxLayout(size_hint=(1,0.2))
+        origMessInputTextBoxSection = BoxLayout(size_hint=(1,0.8))
+        #origMessInputBox.add_widget(self.originalInput)
+
+        origMessInputLabelBoxSection.add_widget(originalLabel)
+        origMessInputTextBoxSection.add_widget(self.originalInput)
+        origMessInputBox.add_widget(origMessInputLabelBoxSection)
+        origMessInputBox.add_widget(origMessInputTextBoxSection)
+
+
+        originalMessageInputSection.add_widget(origMessStepBox)
+        originalMessageInputSection.add_widget(origMessInputBox)
+        #-------------------------------
+        cypherOrigMessageSection = BoxLayout(orientation='horizontal', size_hint=(0.5,1))
+
+        arrowImg = Image(source=r'images/arrow.png')
+        arrowImgBoxSection = BoxLayout(size_hint=(0.5,0.5))
+        arrowImgBoxSection.add_widget(arrowImg)
+        arrowImgSection = AnchorLayout(anchor_x='center', anchor_y='center')
+        arrowImgSection.add_widget(arrowImgBoxSection)
+        arrowOutlineSection = BoxLayout(size_hint=(0.3,1))
+        arrowOutlineSection.add_widget(arrowImgSection)
+
+        step4Section = AnchorLayout(anchor_x='right', anchor_y='center')
+        step4 = Image(source=r'images/circle4_white.png')
+        step4Section.add_widget(step4)
+        step4BoxSection = BoxLayout(size_hint=(0.3,1))
+        step4BoxSection.add_widget(step4Section)
+
+        cypherButtonOrigSection = AnchorLayout(anchor_x='left', anchor_y='center')
+        cypherButtonOrig = Button(
+            text = 'Hash & Cypher',
+            font_size = '18sp',
+            bold = True,
+            background_color = '#00FFCE'
+        )
+        cypherButtonOrigSection.add_widget(cypherButtonOrig)
+        cypherButtonOrigBoxSection = BoxLayout(size_hint=(0.7,1))
+        cypherButtonOrigBoxSection.add_widget(cypherButtonOrigSection)
+
+        cypherButtonBoxSection = BoxLayout(size_hint=(1,1))
+        cypherButtonBoxSection.add_widget(step4BoxSection)
+        cypherButtonBoxSection.add_widget(cypherButtonOrigBoxSection)
+
+        cypherButtonAnchorSection = AnchorLayout(anchor_x='center', anchor_y='center')
+        cypherButtonAnchorSection.add_widget(cypherButtonBoxSection)
+        cypherOutlineSection = BoxLayout(size_hint=(0.7,1))
+        cypherOutlineSection.add_widget(cypherButtonAnchorSection)
+
+        cypherOrigMessageSection.add_widget(arrowOutlineSection)
+        cypherOrigMessageSection.add_widget(cypherOutlineSection)
+
+        self.originalMessSection.add_widget(originalMessageInputSection)
+        self.originalMessSection.add_widget(cypherOrigMessageSection)
+        ############################
+
+        #============================
+        # COPY MESSAGE section
+        self.copyMessageSection = BoxLayout(orientation='horizontal')
+        copyMessageImageSection = AnchorLayout(anchor_x='center', anchor_y='center')
+        copyMessageImageBoxSection = BoxLayout(size_hint=(0.4,0.8))
+        copyMessageStepAnchor = AnchorLayout(anchor_x='right', anchor_y='center')
+        copyMessageImageButtonAnchor = AnchorLayout(anchor_x='left', anchor_y='center')
+        step3 = Image(source=r'images/circle3_white.png')
+        copyMessageStepAnchor.add_widget(step3)
+        copyMessageImageBoxSection.add_widget(copyMessageStepAnchor)
+
+        copyImgButton = Button(
+            text = "",
+            background_normal = r'images/copy_normal.png',
+            background_down = r'images/copy_down.png',
+        )
+        copyImgButton.bind(on_press=self.copyContent)
+
+        #copyImg = Image(source=r'images/copy.png')
+        copyMessageImageButtonAnchor.add_widget(copyImgButton)
+        copyMessageImageBoxSection.add_widget(copyMessageImageButtonAnchor)
+
+        copyMessageImageSection.add_widget(copyMessageImageBoxSection)
+
+        self.copyMessageSection.add_widget(copyMessageImageSection)
+        self.copyMessageSection.add_widget(Label())
+        ############################
+
+        #============================
+        # RECEIVED MESSAGE section
+        self.receivedMessSection = BoxLayout(orientation='horizontal')
+        receivedMessageInputSection = BoxLayout(orientation='horizontal', size_hint=(0.5,1))
+
+        step3Mess = Image(source=r'images/circle3_white.png')
+        self.receivedInput = TextInput(
+            padding_y= (TEXT_PADDING, TEXT_PADDING),
+            padding_x= (TEXT_PADDING, TEXT_PADDING),
+            #size_hint= (1, 0.5),
+            hint_text= 'Write your message')
+
+        receivedLabel = Label(
+            text = 'Received message',
+            font_size = '20sp',
+            color = '#00FF23'
+        )
+
+        receivedMessStepBox = BoxLayout(size_hint=(0.15,1))
+        receivedMessStepBox.add_widget(step3Mess)
+
+        receivedMessInputBox = BoxLayout(orientation='vertical', size_hint=(0.85,1))
+        receivedMessInputLabelBoxSection = BoxLayout(size_hint=(1,0.2))
+        receivedMessInputTextBoxSection = BoxLayout(size_hint=(1,0.8))
+        #receivedMessInputBox.add_widget(self.receivedInput)
+
+        receivedMessInputLabelBoxSection.add_widget(receivedLabel)
+        receivedMessInputTextBoxSection.add_widget(self.receivedInput)
+        receivedMessInputBox.add_widget(receivedMessInputLabelBoxSection)
+        receivedMessInputBox.add_widget(receivedMessInputTextBoxSection)
+
+
+        receivedMessageInputSection.add_widget(receivedMessStepBox)
+        receivedMessageInputSection.add_widget(receivedMessInputBox)
+        #-------------------------------
+        hashDecypherMessageSection = BoxLayout(orientation='horizontal', size_hint=(0.5,1))
+
+        arrowImgDe = Image(source=r'images/arrow.png')
+        arrowImgDeBoxSection = BoxLayout(size_hint=(0.5,0.5))
+        arrowImgDeBoxSection.add_widget(arrowImgDe)
+        arrowImgDeSection = AnchorLayout(anchor_x='center', anchor_y='center')
+        arrowImgDeSection.add_widget(arrowImgDeBoxSection)
+        arrowDeOutlineSection = BoxLayout(size_hint=(0.3,1))
+        arrowDeOutlineSection.add_widget(arrowImgDeSection)
+        
+        step5Section = AnchorLayout(anchor_x='right', anchor_y='center')
+        step5 = Image(source=r'images/circle5_white.png')
+        step5Section.add_widget(step5)
+        step5BoxSection = BoxLayout(size_hint=(0.3,1))
+        step5BoxSection.add_widget(step5Section)
+
+        hashDecypherButtonSection = AnchorLayout(anchor_x='left', anchor_y='center')
+        hashDecypherButton = Button(
+            text = 'Hash, Decypher\n& CHECK',
+            font_size = '18sp',
+            bold = True,
+            background_color = '#00FFCE'
+        )
+        hashDecypherButtonSection.add_widget(hashDecypherButton)
+        hashDecypherButtonBoxSection = BoxLayout(size_hint=(0.7,1))
+        hashDecypherButtonBoxSection.add_widget(hashDecypherButtonSection)
+
+        hashDecypherBoxSection = BoxLayout(size_hint=(1,1))
+        hashDecypherBoxSection.add_widget(step5BoxSection)
+        hashDecypherBoxSection.add_widget(hashDecypherButtonBoxSection)
+
+        hashDecypherButtonAnchorSection = AnchorLayout(anchor_x='center', anchor_y='center')
+        hashDecypherButtonAnchorSection.add_widget(hashDecypherBoxSection)
+        hashDecypherOutlineSection = BoxLayout(size_hint=(0.7,1))
+        hashDecypherOutlineSection.add_widget(hashDecypherButtonAnchorSection)
+
+        hashDecypherMessageSection.add_widget(arrowDeOutlineSection)
+        hashDecypherMessageSection.add_widget(hashDecypherOutlineSection)
+
+        self.receivedMessSection.add_widget(receivedMessageInputSection)
+        self.receivedMessSection.add_widget(hashDecypherMessageSection)
+        ############################
+
+        #ADD message section layouts to main MESSAGE SECTION
+        self.messageSection.add_widget(self.originalMessSection)
+        self.messageSection.add_widget(self.copyMessageSection)
+        self.messageSection.add_widget(self.receivedMessSection)
+
+        """
+            ADD all layouts to MAIN layout
+        """
+        self.mainLayout.add_widget(self.RSAsection)
+        self.mainLayout.add_widget(self.messageSection)
+
+        #self.mainBorderLayout = AnchorLayout(anchor_x='center', anchor_y='center')
+        #self.mainBorderLayout.add_widget(self.mainLayout)
+
+        return self.mainLayout
+
+    def setKeySize(self, instance):
+        self.keySize = int(instance.text)
+        print("KEYSIZE set to: {}".format(self.keySize))
+
+
+    # def setPositions(self, instance):
+    #     for i, child in enumerate(self.upperRowGrid.children):
+    #         print(i, child.text, child.size)
+    #         with child.canvas:
+    #             Color(0, 1, 1, 0.5)
+    #             Rectangle(pos=(300*(i+1),0), size=child.size)
+
+    # def getSize(self, instance):
+    #     self.counter.text = str(Window.size)
+
+
+    def editKeyPopUp(self, instance):
+        #create a popUp window and show it
+
+        relative = RelativeLayout()
+
+        #create inside BoxLayout
+        layoutPopUp = BoxLayout(orientation = 'vertical')
+        #create TextInput and Button for saving
+        self.editText = TextInput(hint_text = 'Here should be your RSA public key', text = self.wiadomosc, size_hint=(1, 0.8))
+
+        saveAndExit = Button(text='Save and exit', size_hint=(1,0.2), background_color='#00F0FF')
+        saveAndExit.bind(on_press=self.saveMessage)
+        #centerButton = AnchorLayout(anchor_x='center', anchor_y='center')
+
+        #centerButton.add_widget(saveAndExit)
+        layoutPopUp.add_widget(self.editText)
+        layoutPopUp.add_widget(saveAndExit)
+
+        relative.add_widget(layoutPopUp)
+
+        self.popUp = Popup(
+            title = 'Edit RSA public key',
+            content = relative,
+            size_hint=(0.8,0.8),
+            auto_dismiss=False,
+        )
+
+        self.popUp.open()
+    
+    def resetPublicKey(self, instance):
+        self.currentPublicKey = self.origPublicKey
+
+    def saveMessage(self, instance):
+        self.wiadomosc = self.editText.text
+        print("Wiadomość: {}.".format(self.wiadomosc))
+        self.popUp.dismiss()
+
+    def copyContent(self, instance):
+        self.receivedInput.text = self.originalInput.text
+
 
 if __name__ == '__main__':
-    print("Hello!")
     #print(kivy.__version__)
-    MyMainApp().run()
+    DigitalSignatureTRNGApp().run()
