@@ -14,7 +14,6 @@ class TRNG:
                 frameHeight = 100,
                 MAX_IMG_QUANTITY = 1) -> None:
 
-        self.isProceeded = False                      #used when taking bytes of data
         self.iterator = 0
 
         self.usedCamera = usedCamera
@@ -380,32 +379,9 @@ class TRNG:
         self.Z = []
         self.out = []
         self.iterator = 0
-        self.isProceeded = False
 
     def resetIterator(self):
         self.iterator = 0
-
-    #=============================================
-    # define all sub-functions of setRandom()
-
-    def gatherImages(self):
-        self.__gatherImgs()
-
-    def preprocessData(self):
-        self.__preprocessing()
-
-    def postprocessData(self):
-        self.__postprocessing()
-        #flatten whole out array
-        self.out = flattenList(self.out)
-        #and reset the iterator
-        self.iterator = 0
-        # flush saved self input and output - clear storage
-        self.img = []
-        self.Z = []
-
-    #
-    #=============================================
 
 ##########################################
 # OTHER FUNCTIONS
