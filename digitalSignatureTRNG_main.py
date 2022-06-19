@@ -24,11 +24,14 @@ from kivy.uix.popup import Popup
 from kivy.uix.image import Image
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.behaviors import ButtonBehavior
 import Constants
 
 BUTTON_COLOR = '#00FFC0'
 INITIAL_GEN_BUTTON_COLOR = '#00FF00'
 
+class ImageButton(ButtonBehavior, Image):               #INFO: IDEA from https://stackoverflow.com/questions/48509828/kivy-image-button-stretching
+    pass
 
 class DigitalSignatureTRNGApp(App):
     def __init__(self, **kwargs):
@@ -95,11 +98,11 @@ class DigitalSignatureTRNGApp(App):
         buttonFontSize = '14sp'
 
         keySizeVals = [1024, 2048, 4096]
-        keyOption1 = ToggleButton(text=str(keySizeVals[0]), group='keySize', state='down', font_size=buttonFontSize)
+        keyOption1 = ToggleButton(text=str(keySizeVals[0]), group='keySize', state='down', font_size=buttonFontSize, background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD)
         keyOption1.bind(on_press=self.setKeySize)
-        keyOption2 = ToggleButton(text=str(keySizeVals[1]), group='keySize', font_size=buttonFontSize)
+        keyOption2 = ToggleButton(text=str(keySizeVals[1]), group='keySize', font_size=buttonFontSize, background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD)
         keyOption2.bind(on_press=self.setKeySize)
-        keyOption3 = ToggleButton(text=str(keySizeVals[2]), group='keySize', font_size=buttonFontSize)
+        keyOption3 = ToggleButton(text=str(keySizeVals[2]), group='keySize', font_size=buttonFontSize, background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD)
         keyOption3.bind(on_press=self.setKeySize)
 
         genOptionsButtonsBoxSection = BoxLayout(size_hint=(0.7,1), padding = '15dp')
@@ -123,24 +126,6 @@ class DigitalSignatureTRNGApp(App):
         generatorBoxSection = BoxLayout()
         generatorBoxSection.add_widget(stepGenBoxSection)
         generatorBoxSection.add_widget(genButtonBoxSection)
-        #
-        #############################
-
-        #############################       #TODO: remove!!
-        # PROGRESS BAR section
-        #
-        displayProgressBar = ProgressBar(max=5)
-        displayProgressBar.value = 0
-
-        self.displayProgressLabel = Label(
-            text = 'NOT GENERATED YET',
-            font_size = '20sp',
-            color = '#00FF23'
-        )
-
-        progressBarBoxSection = BoxLayout(orientation = 'vertical', padding = 10)
-        progressBarBoxSection.add_widget(displayProgressBar)
-        progressBarBoxSection.add_widget(self.displayProgressLabel)
         #
         #############################
 
@@ -218,9 +203,10 @@ class DigitalSignatureTRNGApp(App):
 
         step2 = Image(source=r'images/circle2_white.png')
         self.originalInput = TextInput(
-            padding_y= (TEXT_PADDING, TEXT_PADDING),
-            padding_x= (TEXT_PADDING, TEXT_PADDING),
-            hint_text= 'Write your message')
+            font_size = '20sp',
+            padding_y = (TEXT_PADDING, TEXT_PADDING),
+            padding_x = (TEXT_PADDING, TEXT_PADDING),
+            hint_text = 'Write your message')
 
         originalLabel = Label(
             text = 'Original message',
@@ -299,15 +285,27 @@ class DigitalSignatureTRNGApp(App):
         copyMessageStepAnchor.add_widget(step3)
         copyMessageImageBoxSection.add_widget(copyMessageStepAnchor)
 
-        copyImgButton = Button(
-            text = "",
-            background_normal = r'images/copy_normal.png',
-            background_down = r'images/copy_down.png',
+        # copyImgButton = Button(
+        #     text = "",
+        #     background_normal = r'images/copy_normal.png',
+        #     background_down = r'images/copy_down.png',
+        #     allow_stretch = True
+        # )
+
+        copyImg = ImageButton(
+            source = r'images/copy_normal.png',
+            size_hint = (0.8,0.8),
         )
-        copyImgButton.bind(on_press=self.copyContent)
+
+        #copyImgButton.add_widget(copyImg)
+
+        #self.add_widget(ImageButton(source=('Image.png'),size=(200,200), size_hint=(None,None),pos_hint={"x":0.3, "top":0.7}))
+
+
+        copyImg.bind(on_press=self.copyContent)
 
         #copyImg = Image(source=r'images/copy.png')
-        copyMessageImageButtonAnchor.add_widget(copyImgButton)
+        copyMessageImageButtonAnchor.add_widget(copyImg)
         copyMessageImageBoxSection.add_widget(copyMessageImageButtonAnchor)
 
         copyMessageImageSection.add_widget(copyMessageImageBoxSection)
@@ -323,10 +321,11 @@ class DigitalSignatureTRNGApp(App):
 
         step3Mess = Image(source=r'images/circle3_white.png')
         self.receivedInput = TextInput(
-            padding_y= (TEXT_PADDING, TEXT_PADDING),
-            padding_x= (TEXT_PADDING, TEXT_PADDING),
+            font_size = '20sp',
+            padding_y = (TEXT_PADDING, TEXT_PADDING),
+            padding_x = (TEXT_PADDING, TEXT_PADDING),
             #size_hint= (1, 0.5),
-            hint_text= 'Write your message')
+            hint_text = 'Write your message')
 
         receivedLabel = Label(
             text = 'Received message',
