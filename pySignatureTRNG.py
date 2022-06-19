@@ -1,95 +1,83 @@
-import math
-import os
 from Crypto.PublicKey import RSA
-from numpy import byte
-from TRNgenClass import *
+from Crypto.Hash import SHA3_256
+from Crypto.Signature import pkcs1_15
+import kivy
+from sympy import public
+kivy.require('2.1.0')
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.textinput import TextInput
+from kivy.uix.button import Button
 
-def entropyCount(arr):
-    NUM_OF_ALL_VALUES = 512
-    MAX_RANGE = 256
-    entropy = 0
-
-    auxArr = []
-
-    #liczba wszystkich elementów / NUM_OF_ALL_VALUES 
-    for i in range(0, len(arr), math.floor(len(arr)/NUM_OF_ALL_VALUES)):
-        auxArr.append(arr[i])
-    #auxArr = arr[0:NUM_OF_ALL_VALUES]
-
-    dict = {}
-    prob = []
-
-    for num in auxArr:
-        if num not in dict:
-            dict[num] = 0
-        dict[num] += 1
-    
-    auxSum = 0
-
-    for it in range(MAX_RANGE):                         #ERROR - podejrzewam, że nie ma wszystkich wartości 0-255
-        if(it in dict.keys()):
-            prob.append(dict[it]/NUM_OF_ALL_VALUES)
-            auxSum += prob[it] * math.log(prob[it], 2)
-        #if there is no such number in a dictionary - probability equals 0, then 0*math.log(0,2) = 0 due to l'Hopital's rule
-        # so there is no need for further computations on this case
-        # we save 0 to probability array only for consistent range purposes
-        else:
-            prob.append(0)
-        
-    entropy = -1*auxSum
-
-    print("ENTROPY: {}".format(entropy))
-    
+import pyperclip
 
 
-gen1 = TRNG()
+class textTest(App):
+    myNewKey = ''
+    publicKey = ''
+    key = ''
+    mess = 'Witaj PPówko'
+    signature = ''
 
-keySize = 4096
+    def build(self):
+        self.generateRSA()
+        self.window = self.layoutGUI() # GridLayout()
 
-gen1.setRandom()
+        return self.window
 
-print(gen1.getRandomList())
-print("ints   :", gen1.getRandomList(8))
-print("bytes  :", bytes(gen1.getRandomList(8)))
+    def layoutGUI(self):
+        box = BoxLayout(orientation = 'vertical')
+        self.textInput = TextInput(size_hint=(1,0.8), text=self.publicKey)
+        button = Button(size_hint=(1,0.2), text='Save')
 
-num = os.urandom(8)
-print("os_byte:", num)
-# print("")
-# print(bin(num[0]))
+        button.bind(on_press=self.saveText)
+        box.add_widget(self.textInput)
+        box.add_widget(button)
+        return box
 
-# '''
-# Traceback (most recent call last):
-#   File "d:\GitHub\TRNG_digital_signature_ciphering\pySignatureTRNG.py", line 69, in <module>
-#     key = RSA.generate(keySize, gen1.getRandomList)
-#   File "C:\Users\MATI\AppData\Local\Programs\Python\Python310\lib\site-packages\Crypto\PublicKey\RSA.py", line 448, in generate
-#     p = generate_probable_prime(exact_bits=size_p,
-#   File "C:\Users\MATI\AppData\Local\Programs\Python\Python310\lib\site-packages\Crypto\Math\Primality.py", line 330, in generate_probable_prime
-#     candidate = Integer.random(exact_bits=exact_bits,
-#   File "C:\Users\MATI\AppData\Local\Programs\Python\Python310\lib\site-packages\Crypto\Math\_IntegerBase.py", line 343, in random
-#     return cls.from_bytes(bchr(msb) + randfunc(bytes_needed - 1))
-# TypeError: can't concat list to bytes
-# '''
+    def saveText(self, instance):
+        print(type(self.publicKey))
+        print(self.publicKey)
+        myNewKey = bytes(self.textInput.text, 'utf-8')              #INFO: really IMPORTANT - key needs to be saved as bytes() instance
+        print(type(myNewKey))
+        print(myNewKey)
 
-print("done")
+        receivedKey = RSA.import_key(myNewKey)
+        hashReceivedMess = SHA3_256.new(bytes(self.mess, 'utf-8'))
 
-key = RSA.generate(keySize, gen1.getRandom)
+        try:
+            pkcs1_15.new(receivedKey).verify(hashReceivedMess, self.signature)
+            print("Same message!")
+        except(ValueError, TypeError):
+            print("The signature is invalid!")
 
-# Traceback (most recent call last):
-#   File "d:\GitHub\TRNG_digital_signature_ciphering\pySignatureTRNG.py", line 79, in <module>
-#     key = RSA.generate(keySize, gen1.getRandom)
-#   File "C:\Users\MATI\AppData\Local\Programs\Python\Python310\lib\site-packages\Crypto\PublicKey\RSA.py", line 448, in generate
-#     p = generate_probable_prime(exact_bits=size_p,
-#   File "C:\Users\MATI\AppData\Local\Programs\Python\Python310\lib\site-packages\Crypto\Math\Primality.py", line 330, in generate_probable_prime
-#     candidate = Integer.random(exact_bits=exact_bits,
-#   File "C:\Users\MATI\AppData\Local\Programs\Python\Python310\lib\site-packages\Crypto\Math\_IntegerBase.py", line 338, in random
-#     msb = bord(randfunc(1)[0])
-# IndexError: index out of range
+    def getNewKey(self):
+        return self.myNewKey
 
-exportedKey = key.export_key(pkcs=8)
+    def generateRSA(self):
+        self.key = RSA.generate(1024)
+        hashMess = SHA3_256.new(bytes(self.mess,'utf-8'))
+        self.signature = pkcs1_15.new(self.key).sign(hashMess)
+        print(self.signature)
+        self.publicKey = self.key.public_key().export_key()
 
-print(exportedKey)
 
-# num = os.urandom(4096)
-# print(num)
-# print("")
-# print(bin(num[0]))
+myApp = textTest()
+myApp.run()
+
+#after exiting from KIVY app
+
+
+
+# mess = 'Witaj PPówko'
+# hashMess = SHA3_256.new(bytes(mess,'utf-8'))
+# signature = pkcs1_15.new(key).sign(hashMess)
+
+# receivedKey = RSA.import_key(myNewKey)
+# hashReceivedMess = SHA3_256.new(bytes(mess, 'utf-8'))
+
+# try:
+#     pkcs1_15.new(receivedKey).verify(hashReceivedMess, signature)
+#     print("Same message!")
+# except(ValueError, TypeError):
+#     print("The signature is invalid!")

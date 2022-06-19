@@ -1,10 +1,8 @@
 # all the important imports:
 #----------------------------
-from cgitb import reset
 from TRNgenClass import TRNG
 from Crypto.PublicKey import RSA
 import time
-import pyperclip
 
 import kivy
 kivy.require('2.1.0')
@@ -24,11 +22,6 @@ from kivy.uix.popup import Popup
 from kivy.uix.image import Image
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.togglebutton import ToggleButton
-import Constants
-
-BUTTON_COLOR = '#00FFC0'
-INITIAL_GEN_BUTTON_COLOR = '#00FF00'
-
 
 class DigitalSignatureTRNGApp(App):
     def __init__(self, **kwargs):
@@ -36,6 +29,7 @@ class DigitalSignatureTRNGApp(App):
         self.iterator = 0
         self.ifClicked = False
         self.returned = False
+        self.wiadomosc = ''
         self.keySize = 1024
         self.originalInput = TextInput()
         self.receivedInput = TextInput()
@@ -43,13 +37,12 @@ class DigitalSignatureTRNGApp(App):
         self.currentPublicKey = ""
         self.gen = TRNG()
         self.keyRSA = ""
-        self.generatingRSA = False
 
     def build(self):
         #returns a window object with all it's widgets
         self.icon = r'images/appIco.png'
         self.window = self.layoutGUI() # GridLayout()
-        Clock.schedule_interval(self.launchGenerator, 1/30)
+        #Clock.schedule_interval(self.getSize, 1/60)
 
         return self.window
 
@@ -69,16 +62,16 @@ class DigitalSignatureTRNGApp(App):
         stepGenBoxSection = BoxLayout(size_hint=(0.15,1))
         stepGenBoxSection.add_widget(step1)
 
-        self.generatorButton = Button(
+        generatorButton = Button(
             text = 'Generate RSA keys',
             font_size = '20sp',
             bold = True,
-            background_color = INITIAL_GEN_BUTTON_COLOR
+            background_color = '#00FFCE'
         )
-        self.generatorButton.bind(on_press=self.generateRSAkeys)
+        generatorButton.bind(on_press=self.generateRSAkeys)
 
         genOptionsBoxSection = BoxLayout(orientation='vertical')
-        genOptionsBoxSection.add_widget(self.generatorButton)
+        genOptionsBoxSection.add_widget(generatorButton)
         
         
 
@@ -163,8 +156,8 @@ class DigitalSignatureTRNGApp(App):
             text = 'Edit PUBLIC key',
             font_size = buttonFontSize,
             bold = True,
-            background_color = Constants.EDIT_PUBLIC_BUTTON_BCKGRD,
-            color = Constants.EDIT_PUBLIC_BUTTON_TEXT
+            background_color = '#EE3333',
+            color = '#FF0000'
         )
         resetPublicButton = Button(
             text = 'Reset PUBLIC key',
@@ -174,10 +167,7 @@ class DigitalSignatureTRNGApp(App):
             color = '#22FF22'
         )
 
-        editPublicButton.bind(on_press=self.editKey)
-        resetPublicButton.bind(on_press=self.resetPublicKey)
-        copyPublicButton.bind(on_press=self.copyPublic)
-        copyPrivateButton.bind(on_press=self.copyPrivate)
+        editPublicButton.bind(on_press=self.editKeyPopUp)
 
         buttonPadding = 5
 
@@ -262,13 +252,13 @@ class DigitalSignatureTRNGApp(App):
         step4BoxSection.add_widget(step4Section)
 
         cypherButtonOrigSection = AnchorLayout(anchor_x='left', anchor_y='center')
-        self.cypherButtonOrig = Button(
+        cypherButtonOrig = Button(
             text = 'Hash & Cypher',
             font_size = '18sp',
             bold = True,
             background_color = '#00FFCE'
         )
-        cypherButtonOrigSection.add_widget(self.cypherButtonOrig)
+        cypherButtonOrigSection.add_widget(cypherButtonOrig)
         cypherButtonOrigBoxSection = BoxLayout(size_hint=(0.7,1))
         cypherButtonOrigBoxSection.add_widget(cypherButtonOrigSection)
 
@@ -368,13 +358,13 @@ class DigitalSignatureTRNGApp(App):
         step5BoxSection.add_widget(step5Section)
 
         hashDecypherButtonSection = AnchorLayout(anchor_x='left', anchor_y='center')
-        self.hashDecypherButton = Button(
+        hashDecypherButton = Button(
             text = 'Hash, Decypher\n& CHECK',
             font_size = '18sp',
             bold = True,
             background_color = '#00FFCE'
         )
-        hashDecypherButtonSection.add_widget(self.hashDecypherButton)
+        hashDecypherButtonSection.add_widget(hashDecypherButton)
         hashDecypherButtonBoxSection = BoxLayout(size_hint=(0.7,1))
         hashDecypherButtonBoxSection.add_widget(hashDecypherButtonSection)
 
@@ -408,16 +398,13 @@ class DigitalSignatureTRNGApp(App):
         #self.mainBorderLayout = AnchorLayout(anchor_x='center', anchor_y='center')
         #self.mainBorderLayout.add_widget(self.mainLayout)
 
-        #TODO: uncomment after debugging
-        #self.disableButtons()
-
         return self.mainLayout
 
     def setKeySize(self, instance):
         self.keySize = int(instance.text)
         print("KEYSIZE set to: {}".format(self.keySize))
 
-    def editKey(self, instance):
+    def editKeyPopUp(self, instance):
         #create a popUp window and show it
 
         relative = RelativeLayout()
@@ -425,19 +412,15 @@ class DigitalSignatureTRNGApp(App):
         #create inside BoxLayout
         layoutPopUp = BoxLayout(orientation = 'vertical')
         #create TextInput and Button for saving
-        self.editText = TextInput(hint_text = 'Here should be your RSA public key', text = self.currentPublicKey, size_hint=(1, 0.8))
+        self.editText = TextInput(hint_text = 'Here should be your RSA public key', text = self.wiadomosc, size_hint=(1, 0.8))
 
-        layoutPopUpButtonsBox = BoxLayout(size_hint=(1,0.2))
-        saveAndExit = Button(text='Save and exit', background_color='#00F0FF')
+        saveAndExit = Button(text='Save and exit', size_hint=(1,0.2), background_color='#00F0FF')
         saveAndExit.bind(on_press=self.savePublicKey)
-        exitWithoutSaving = Button(text ='Exit without saving', background_color = '#00F0FF')
-        exitWithoutSaving.bind(on_press=self.discardEditingPublicKey)
+        #centerButton = AnchorLayout(anchor_x='center', anchor_y='center')
 
-        layoutPopUpButtonsBox.add_widget(saveAndExit)
-        layoutPopUpButtonsBox.add_widget(exitWithoutSaving)
-        
+        #centerButton.add_widget(saveAndExit)
         layoutPopUp.add_widget(self.editText)
-        layoutPopUp.add_widget(layoutPopUpButtonsBox)
+        layoutPopUp.add_widget(saveAndExit)
 
         relative.add_widget(layoutPopUp)
 
@@ -451,23 +434,12 @@ class DigitalSignatureTRNGApp(App):
         self.editKeyPopUp.open()
 
     def savePublicKey(self, instance):
-        self.currentPublicKey = bytes(self.editText.text, 'utf-8')      #INFO: really IMPORTANT - key needs to be saved as bytes() instance
+        self.currentPublicKey = self.editText.text
         print("EDITED PUBLIC KEY")
-        self.editKeyPopUp.dismiss()
-
-    def discardEditingPublicKey(self, instance):
-        print("INFO: left EDITING PUBLIC KEY WINDOW without saving")
         self.editKeyPopUp.dismiss()
     
     def resetPublicKey(self, instance):
         self.currentPublicKey = self.origPublicKey
-
-    def copyPublic(self, instance):
-        pyperclip.copy(str(self.currentPublicKey))
-
-    def copyPrivate(self, instance):
-        privateKey = self.keyRSA.export_key(pkcs=1)
-        pyperclip.copy(str(privateKey))
 
     def copyContent(self, instance):
         self.receivedInput.text = self.originalInput.text
@@ -478,62 +450,40 @@ class DigitalSignatureTRNGApp(App):
 
         # self.keyRSA = RSA.generate(self.keySize, self.gen.getRandom)
 
-        #display PopUp
-        infoPopUpBox = BoxLayout(orientation='vertical')
-        generateLabel = Label(
-            text = "RSA keys are generated. Please wait...",
-            font_size = '30sp',
-            color = '#BB00BB',
-            size_hint=(1, 0.9)
-        )
-        disclaimerLabel = Label(
-            text = "Don't react for a possible info that the program doesn't answer",
-            font_size = '15sp',
-            color = '#FF0000',
-            size_hint=(1, 0.1)
-        )
+        Clock.schedule_once(self.disableAllWidgets)
 
-        infoPopUpBox.add_widget(generateLabel)
-        infoPopUpBox.add_widget(disclaimerLabel)
+        start = time.time()
+        while(time.time() - start < 5):
+            a = 0
 
-        self.generatePopup = Popup(
-            title = 'Generating RSA keys',
-            content = infoPopUpBox,
-            size_hint=(0.8,0.8),
-            background_color = [0,0,0,0.9],
-            auto_dismiss=False
-        )
-        self.generatePopup.open()
-        #set flag - generating RSA
-        self.generatingRSA = True
-        self.disableButtons()
-        self.generatorButton.background_color = BUTTON_COLOR
-    
-    def launchGenerator(self, instance):
-        if(self.generatingRSA == True):
-            #generate random string of numbers
-            self.gen.setRandom()
-            #using that string - generate RSA keys
-            self.keyRSA = RSA.generate(self.keySize, self.gen.getRandom)
-            #save public key to string variable for editing purposes
-            self.currentPublicKey = self.keyRSA.public_key().export_key()
-            self.origPublicKey = self.keyRSA.public_key().export_key()
+        self.enableAllWidgets()
 
-            #exit from this function and dismiss INFO popup
-            self.generatingRSA = False
-            self.enableAllWidgets()
-            self.generatePopup.dismiss()
+        #disable PopUp
+
+        # self.disableAllWidgets()
+        # #1. GATHERING SEED DATA
+        # self.displayProgressLabel.text = "GATHERING SEED DATA"
+        # self.gen.gatherImages()
+        # #2. PREPROCESSING
+        # self.displayProgressLabel.text = "PREPROCESSING"
+        # self.gen.preprocessData()
+        # #3. POSTPROCESSING
+        # self.displayProgressLabel.text = "POSTPROCESSING"
+        # self.gen.postprocessData()
+        # #4. GENERATING RSA
+        # self.displayProgressLabel.text = "GENERATING RSA"
+        # self.keyRSA = RSA.generate(self.keySize, self.gen.getRandom)
+        # #5. DONE GENERATING
+        # self.displayProgressLabel.text = "DONE GENERATING"
 
     #TODO: disableAllWidgets function
-    def disableButtons(self):
-        self.cypherButtonOrig.disabled = True
-        self.hashDecypherButton.disabled = True
+    def disableAllWidgets(self):
+        self.messageSection.disabled = True
         self.buttonGridSection.disabled = True
 
     #TODO: enableAllWidgets function
     def enableAllWidgets(self):
-        self.cypherButtonOrig.disabled = False
-        self.hashDecypherButton.disabled = False
+        self.messageSection.disabled = False
         self.buttonGridSection.disabled = False
 
 

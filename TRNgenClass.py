@@ -201,7 +201,7 @@ class TRNG:
         c = np.float64(0.002)
         x = []                                  #initial call for x^i_0 where i = {0, L-1}
         epsilon = np.float64(0.5)               # "The coupling coefficient is set to 0.5 to ensure that the current chaotic state 
-        out = self.out
+        out = []
 
         for it in range(self.MAX_IMG_QUANTITY):
             out.append([])          #append new subarray
@@ -350,7 +350,6 @@ class TRNG:
         # flush saved self input and output - clear storage
         self.img = []
         self.Z = []
-        # self.out = []             # <-- DO NOT FLUSH IT YET!!!
 
     #getRandom() used for retrieving parts of generated string cyclically
     def getRandom(self, byteSize = 128):
@@ -375,15 +374,6 @@ class TRNG:
     # END getRandom()
     #======================================================
 
-    #TODO REMOVE
-    def getRandomList(self, bytes = 512):
-        #num of bits: bytes*8, i.e. bytes = 512 -> 4096 bits
-        return self.out[0:bytes]
-
-    #TODO REMOVE
-    def getListLen(self):
-        return len(self.out)
-
     #flushes all the saved data and resetes to initial states
     def reset(self):
         self.img = []
@@ -394,6 +384,28 @@ class TRNG:
 
     def resetIterator(self):
         self.iterator = 0
+
+    #=============================================
+    # define all sub-functions of setRandom()
+
+    def gatherImages(self):
+        self.__gatherImgs()
+
+    def preprocessData(self):
+        self.__preprocessing()
+
+    def postprocessData(self):
+        self.__postprocessing()
+        #flatten whole out array
+        self.out = flattenList(self.out)
+        #and reset the iterator
+        self.iterator = 0
+        # flush saved self input and output - clear storage
+        self.img = []
+        self.Z = []
+
+    #
+    #=============================================
 
 ##########################################
 # OTHER FUNCTIONS
