@@ -1,6 +1,7 @@
 # all the important imports:
 #----------------------------
 from cgitb import reset
+from logging.config import RESET_ERROR
 from TRNgenClass import TRNG
 from Crypto.PublicKey import RSA
 import time
@@ -47,17 +48,22 @@ class DigitalSignatureTRNGApp(App):
         self.gen = TRNG()
         self.keyRSA = ""
         self.generatingRSA = False
+        self.origTextBeforeChange = ''
+        self.ifHashedOriginal = False
 
     def build(self):
         #returns a window object with all it's widgets
         self.icon = r'images/appIco.png'
+        Window.clearcolor = Constants.MAIN_BACKGROUND
         self.window = self.layoutGUI() # GridLayout()
         Clock.schedule_interval(self.launchGenerator, 1/30)
+        Clock.schedule_interval(self.checkOriginalInputMessage, 1/30)
 
         return self.window
 
     def layoutGUI(self):
         TEXT_PADDING = 5
+        buttonFontSize = '16sp'
         self.mainLayout = BoxLayout(orientation='vertical', padding=50)
 
         """
@@ -76,7 +82,9 @@ class DigitalSignatureTRNGApp(App):
             text = 'Generate RSA keys',
             font_size = '20sp',
             bold = True,
-            background_color = INITIAL_GEN_BUTTON_COLOR
+            background_color = INITIAL_GEN_BUTTON_COLOR,
+            outline_color = Constants.OUTLINE_COLOR_TUPLE,
+            outline_width = Constants.OUTLINE_WIDTH
         )
         self.generatorButton.bind(on_press=self.generateRSAkeys)
 
@@ -88,21 +96,38 @@ class DigitalSignatureTRNGApp(App):
         genOptionsLabel = Label(
             text = 'Key length (bits):',
             font_size = '15sp',
-            color = '#b3b356'
+            color = Constants.MESSAGE_KEY_LENGTH_TEXT,
+            outline_color = Constants.OUTLINE_COLOR_TUPLE,
+            outline_width = Constants.OUTLINE_WIDTH
         )
         genOptionsLabelBoxSection = BoxLayout(size_hint=(0.3,1))
         genOptionsLabelBoxSection.add_widget(genOptionsLabel)
 
         #============================
         # TOGGLE BUTTON section
-        buttonFontSize = '14sp'
 
         keySizeVals = [1024, 2048, 4096]
-        keyOption1 = ToggleButton(text=str(keySizeVals[0]), group='keySize', state='down', font_size=buttonFontSize, background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD)
+        keyOption1 = ToggleButton(
+            text=str(keySizeVals[0]), 
+            group='keySize', 
+            state='down', 
+            font_size=buttonFontSize, 
+            background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD,
+            bold = True)
         keyOption1.bind(on_press=self.setKeySize)
-        keyOption2 = ToggleButton(text=str(keySizeVals[1]), group='keySize', font_size=buttonFontSize, background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD)
+        keyOption2 = ToggleButton(
+            text=str(keySizeVals[1]), 
+            group='keySize', 
+            font_size=buttonFontSize, 
+            background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD,
+            bold = True)
         keyOption2.bind(on_press=self.setKeySize)
-        keyOption3 = ToggleButton(text=str(keySizeVals[2]), group='keySize', font_size=buttonFontSize, background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD)
+        keyOption3 = ToggleButton(
+            text=str(keySizeVals[2]), 
+            group='keySize', 
+            font_size=buttonFontSize, 
+            background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD,
+            bold = True)
         keyOption3.bind(on_press=self.setKeySize)
 
         genOptionsButtonsBoxSection = BoxLayout(size_hint=(0.7,1), padding = '15dp')
@@ -136,27 +161,35 @@ class DigitalSignatureTRNGApp(App):
             text = 'Copy PRIVATE key',
             font_size = buttonFontSize,
             bold = True,
-            background_color = '#90EE90'
+            background_color = Constants.REGULAR_BUTTON_BCKGRD,
+            outline_color = Constants.OUTLINE_COLOR_TUPLE,
+            outline_width = Constants.OUTLINE_WIDTH
         )
         copyPublicButton = Button(
             text = 'Copy PUBLIC key',
             font_size = buttonFontSize,
             bold = True,
-            background_color = '#90EE90'
+            background_color = Constants.REGULAR_BUTTON_BCKGRD,
+            outline_color = Constants.OUTLINE_COLOR_TUPLE,
+            outline_width = Constants.OUTLINE_WIDTH
         )
         editPublicButton = Button(
             text = 'Edit PUBLIC key',
             font_size = buttonFontSize,
             bold = True,
             background_color = Constants.EDIT_PUBLIC_BUTTON_BCKGRD,
-            color = Constants.EDIT_PUBLIC_BUTTON_TEXT
+            color = Constants.EDIT_PUBLIC_BUTTON_TEXT,
+            outline_color = Constants.OUTLINE_COLOR_TUPLE,
+            outline_width = Constants.OUTLINE_WIDTH
         )
         resetPublicButton = Button(
             text = 'Reset PUBLIC key',
             font_size = buttonFontSize,
             bold = True,
-            background_color = '#00FFCE',
-            color = '#22FF22'
+            background_color = Constants.REGULAR_BUTTON_BCKGRD,
+            color = Constants.RESET_PUBLIC_BUTTON_TEXT,
+            outline_color = Constants.OUTLINE_COLOR_TUPLE,
+            outline_width = Constants.OUTLINE_WIDTH
         )
 
         editPublicButton.bind(on_press=self.editKey)
@@ -211,7 +244,9 @@ class DigitalSignatureTRNGApp(App):
         originalLabel = Label(
             text = 'Original message',
             font_size = '20sp',
-            color = '#00FF23'
+            color = Constants.MESSAGE_INFO_TEXT,
+            outline_color = Constants.OUTLINE_COLOR_TUPLE,
+            outline_width = Constants.OUTLINE_WIDTH
         )
 
         origMessStepBox = BoxLayout(size_hint=(0.15,1))
@@ -252,8 +287,12 @@ class DigitalSignatureTRNGApp(App):
             text = 'Hash & Cypher',
             font_size = '18sp',
             bold = True,
-            background_color = '#00FFCE'
+            background_color = Constants.REGULAR_BUTTON_BCKGRD,
+            outline_color = Constants.OUTLINE_COLOR_TUPLE,
+            outline_width = Constants.OUTLINE_WIDTH
         )
+        self.cypherButtonOrig.bind(on_press=self.hashOriginal)
+
         cypherButtonOrigSection.add_widget(self.cypherButtonOrig)
         cypherButtonOrigBoxSection = BoxLayout(size_hint=(0.7,1))
         cypherButtonOrigBoxSection.add_widget(cypherButtonOrigSection)
@@ -293,7 +332,7 @@ class DigitalSignatureTRNGApp(App):
         # )
 
         copyImg = ImageButton(
-            source = r'images/copy_normal.png',
+            source = r'images/copy_green_dimmed.png',
             size_hint = (0.8,0.8),
         )
 
@@ -330,7 +369,9 @@ class DigitalSignatureTRNGApp(App):
         receivedLabel = Label(
             text = 'Received message',
             font_size = '20sp',
-            color = '#00FF23'
+            color = Constants.MESSAGE_INFO_TEXT,
+            outline_color = Constants.OUTLINE_COLOR_TUPLE,
+            outline_width = Constants.OUTLINE_WIDTH
         )
 
         receivedMessStepBox = BoxLayout(size_hint=(0.15,1))
@@ -371,8 +412,12 @@ class DigitalSignatureTRNGApp(App):
             text = 'Hash, Decypher\n& CHECK',
             font_size = '18sp',
             bold = True,
-            background_color = '#00FFCE'
+            background_color = Constants.REGULAR_BUTTON_BCKGRD,
+            outline_color = Constants.OUTLINE_COLOR_TUPLE,
+            outline_width = Constants.OUTLINE_WIDTH
         )
+        self.hashDecypherButton.bind(on_press = self.hashReceived)
+
         hashDecypherButtonSection.add_widget(self.hashDecypherButton)
         hashDecypherButtonBoxSection = BoxLayout(size_hint=(0.7,1))
         hashDecypherButtonBoxSection.add_widget(hashDecypherButtonSection)
@@ -478,6 +523,7 @@ class DigitalSignatureTRNGApp(App):
         # self.keyRSA = RSA.generate(self.keySize, self.gen.getRandom)
 
         #display PopUp
+        #TODO: change GENERATING RSA popup colours!
         infoPopUpBox = BoxLayout(orientation='vertical')
         generateLabel = Label(
             text = "RSA keys are generated. Please wait...",
@@ -523,17 +569,65 @@ class DigitalSignatureTRNGApp(App):
             self.enableAllWidgets()
             self.generatePopup.dismiss()
 
-    #TODO: disableAllWidgets function
     def disableButtons(self):
         self.cypherButtonOrig.disabled = True
         self.hashDecypherButton.disabled = True
         self.buttonGridSection.disabled = True
 
-    #TODO: enableAllWidgets function
     def enableAllWidgets(self):
         self.cypherButtonOrig.disabled = False
         self.hashDecypherButton.disabled = False
         self.buttonGridSection.disabled = False
+
+    def hashOriginal(self, instance):
+        #TODO: hashing & cyphering logic of a message
+        print("INFO: original message hashed")
+        self.cypherButtonOrig.disabled = True
+        self.ifHashedOriginal = True
+
+    def checkOriginalInputMessage(self, instance):
+        if(self.origTextBeforeChange != self.originalInput.text):
+            print("INFO: original message changed")
+            self.origTextBeforeChange = self.originalInput.text
+            self.cypherButtonOrig.disabled = False
+            self.ifHashedOriginal = False
+
+    def hashReceived(self, instance):
+        if(self.ifHashedOriginal == False):                             #if the user would like to HASH received message and check result before HASHing original message
+            print("ERROR: original message not hashed!")
+            errorHashingMessage = Label(
+                size_hint = (1, 0.9),
+                text = 'First hash the original message (step 4)',
+                font_size = '30sp'
+            )
+            errorHashingButton = Button(
+                size_hint = (1, 0.1),
+                text = 'CLOSE',
+                font_size = '20sp',
+                background_color = Constants.REGULAR_BUTTON_BCKGRD
+            )
+            
+
+            errorHashingBox = BoxLayout(orientation = 'vertical')
+            errorHashingBox.add_widget(errorHashingMessage)
+            errorHashingBox.add_widget(errorHashingButton)
+
+
+            errorHashingPopUp = Popup(
+                title = 'ERROR: original message not hashed!',
+                content = errorHashingBox,
+                size_hint=(0.8,0.8),
+                background_color = [0,0,0,0.9],
+                auto_dismiss=False
+            )
+            errorHashingPopUp.open()
+            errorHashingButton.bind(on_press = errorHashingPopUp.dismiss)
+        else:
+            #TODO: hashing, decyphering & checking if same message
+            print("INFO: received message hashed and compared to original")
+            #TODO: display POPUP with a result!!
+            #INFO: there is no need for disabling this button as compared to "hashOriginal"
+        
 
 
 if __name__ == '__main__':
