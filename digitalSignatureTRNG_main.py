@@ -1,6 +1,7 @@
 # all the important imports:
 #----------------------------
 # my local classes and files
+from turtle import window_width
 from TRNgenClass import TRNG
 import Constants
 # modules
@@ -60,6 +61,7 @@ class DigitalSignatureTRNGApp(App):
         self.window = self.layoutGUI() # GridLayout()
         Clock.schedule_interval(self.launchGenerator, 1/30)
         Clock.schedule_interval(self.checkOriginalInputMessage, 1/30)
+        Clock.schedule_interval(self.checkWindowSize, 1/30)
 
         return self.window
 
@@ -82,6 +84,7 @@ class DigitalSignatureTRNGApp(App):
 
         self.generatorButton = Button(
             text = 'Generate RSA keys',
+            font_name = Constants.MAIN_FONT_BOLD_LOCATION,
             font_size = '20sp',
             bold = True,
             background_normal = '',                                     #get rid of color tint of gray after implementing "background_color"
@@ -97,7 +100,8 @@ class DigitalSignatureTRNGApp(App):
         
 
         genOptionsLabel = Label(
-            text = 'Key length (bits):',
+            text = 'Key length:',
+            font_name = Constants.MAIN_FONT_LOCATION,
             font_size = '15sp',
             color = Constants.MESSAGE_KEY_LENGTH_TEXT,
             outline_color = Constants.OUTLINE_COLOR_TUPLE,
@@ -115,6 +119,7 @@ class DigitalSignatureTRNGApp(App):
             group='keySize', 
             state='down', 
             font_size=buttonFontSize, 
+            font_name = Constants.MAIN_FONT_LOCATION,
             background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD,
             bold = True)
         keyOption1.bind(on_press=self.setKeySize)
@@ -122,6 +127,7 @@ class DigitalSignatureTRNGApp(App):
             text=str(keySizeVals[1]), 
             group='keySize', 
             font_size=buttonFontSize, 
+            font_name = Constants.MAIN_FONT_LOCATION,
             background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD,
             bold = True)
         keyOption2.bind(on_press=self.setKeySize)
@@ -129,6 +135,7 @@ class DigitalSignatureTRNGApp(App):
             text=str(keySizeVals[2]), 
             group='keySize', 
             font_size=buttonFontSize, 
+            font_name = Constants.MAIN_FONT_LOCATION,
             background_color = Constants.TOGGLE_BUTTON_COLOR_BCKGRD,
             bold = True)
         keyOption3.bind(on_press=self.setKeySize)
@@ -162,6 +169,7 @@ class DigitalSignatureTRNGApp(App):
         #
         copyPrivateButton = Button(
             text = 'Copy PRIVATE key',
+            font_name = Constants.MAIN_FONT_LOCATION,
             font_size = buttonFontSize,
             bold = True,
             background_color = Constants.REGULAR_BUTTON_BCKGRD,
@@ -170,6 +178,7 @@ class DigitalSignatureTRNGApp(App):
         )
         copyPublicButton = Button(
             text = 'Copy PUBLIC key',
+            font_name = Constants.MAIN_FONT_LOCATION,
             font_size = buttonFontSize,
             bold = True,
             background_color = Constants.REGULAR_BUTTON_BCKGRD,
@@ -178,6 +187,7 @@ class DigitalSignatureTRNGApp(App):
         )
         editPublicButton = Button(
             text = 'Edit PUBLIC key',
+            font_name = Constants.MAIN_FONT_LOCATION,
             font_size = buttonFontSize,
             bold = True,
             background_color = Constants.EDIT_PUBLIC_BUTTON_BCKGRD,
@@ -187,6 +197,7 @@ class DigitalSignatureTRNGApp(App):
         )
         resetPublicButton = Button(
             text = 'Reset PUBLIC key',
+            font_name = Constants.MAIN_FONT_LOCATION,
             font_size = buttonFontSize,
             bold = True,
             background_color = Constants.REGULAR_BUTTON_BCKGRD,
@@ -239,13 +250,14 @@ class DigitalSignatureTRNGApp(App):
 
         step2 = Image(source=r'images/circle2_white.png')
         self.originalInput = TextInput(
-            font_size = '20sp',
+            font_size = '18sp',
             padding_y = (TEXT_PADDING, TEXT_PADDING),
             padding_x = (TEXT_PADDING, TEXT_PADDING),
             hint_text = 'Write your message')
 
         originalLabel = Label(
             text = 'Original message',
+            font_name = Constants.MAIN_FONT_LOCATION,
             font_size = '20sp',
             color = Constants.MESSAGE_INFO_TEXT,
             outline_color = Constants.OUTLINE_COLOR_TUPLE,
@@ -288,6 +300,7 @@ class DigitalSignatureTRNGApp(App):
         cypherButtonOrigSection = AnchorLayout(anchor_x='left', anchor_y='center')
         self.cypherButtonOrig = Button(
             text = 'Hash & Cypher',
+            font_name = Constants.MAIN_FONT_LOCATION,
             font_size = '18sp',
             bold = True,
             background_color = Constants.REGULAR_BUTTON_BCKGRD,
@@ -363,7 +376,7 @@ class DigitalSignatureTRNGApp(App):
 
         step3Mess = Image(source=r'images/circle3_white.png')
         self.receivedInput = TextInput(
-            font_size = '20sp',
+            font_size = '18sp',
             padding_y = (TEXT_PADDING, TEXT_PADDING),
             padding_x = (TEXT_PADDING, TEXT_PADDING),
             #size_hint= (1, 0.5),
@@ -371,6 +384,7 @@ class DigitalSignatureTRNGApp(App):
 
         receivedLabel = Label(
             text = 'Received message',
+            font_name = Constants.MAIN_FONT_LOCATION,
             font_size = '20sp',
             color = Constants.MESSAGE_INFO_TEXT,
             outline_color = Constants.OUTLINE_COLOR_TUPLE,
@@ -413,6 +427,8 @@ class DigitalSignatureTRNGApp(App):
         hashDecypherButtonSection = AnchorLayout(anchor_x='left', anchor_y='center')
         self.hashDecypherButton = Button(
             text = 'Hash, Decypher\n& CHECK',
+            halign = 'center',
+            font_name = Constants.MAIN_FONT_LOCATION,
             font_size = '18sp',
             bold = True,
             background_color = Constants.REGULAR_BUTTON_BCKGRD,
@@ -469,12 +485,21 @@ class DigitalSignatureTRNGApp(App):
         #create inside BoxLayout
         layoutPopUp = BoxLayout(orientation = 'vertical')
         #create TextInput and Button for saving
-        self.editText = TextInput(hint_text = 'Here should be your RSA public key', text = self.currentPublicKey, size_hint=(1, 0.8))
+        self.editText = TextInput(
+            hint_text = 'Here should be your RSA public key',
+            text = self.currentPublicKey, 
+            size_hint=(1, 0.8))
 
         layoutPopUpButtonsBox = BoxLayout(size_hint=(1,0.2))
-        saveAndExit = Button(text='Save and exit', background_color='#00F0FF')
+        saveAndExit = Button(
+            text='Save and exit', 
+            font_name = Constants.MAIN_FONT_LOCATION,
+            background_color='#00F0FF')
         saveAndExit.bind(on_press=self.savePublicKey)
-        exitWithoutSaving = Button(text ='Exit without saving', background_color = '#00F0FF')
+        exitWithoutSaving = Button(
+            text ='Exit without saving',
+            font_name = Constants.MAIN_FONT_LOCATION,
+            background_color = '#00F0FF')
         exitWithoutSaving.bind(on_press=self.discardEditingPublicKey)
 
         layoutPopUpButtonsBox.add_widget(saveAndExit)
@@ -524,12 +549,14 @@ class DigitalSignatureTRNGApp(App):
         infoPopUpBox = BoxLayout(orientation='vertical')
         generateLabel = Label(
             text = "RSA keys are generated. Please wait...",
+            font_name = Constants.MAIN_FONT_LOCATION,
             font_size = '30sp',
-            color = '#BB00BB',
+            color = Constants.LABEL_POPUP_GREYISH,
             size_hint=(1, 0.9)
         )
         disclaimerLabel = Label(
             text = "Don't react for a possible info that the program doesn't answer",
+            font_name = Constants.MAIN_FONT_LOCATION,
             font_size = '15sp',
             color = '#FF0000',
             size_hint=(1, 0.1)
@@ -541,7 +568,7 @@ class DigitalSignatureTRNGApp(App):
         self.generatePopup = Popup(
             title = 'Generating RSA keys',
             content = infoPopUpBox,
-            size_hint=(0.8,0.8),
+            size_hint=(0.9,0.9),
             background_color = [0,0,0,0.9],
             auto_dismiss=False
         )
@@ -554,12 +581,18 @@ class DigitalSignatureTRNGApp(App):
     def launchGenerator(self, instance):
         if(self.generatingRSA == True):
             #generate random string of numbers
-            #self.gen.setRandom()               #TODO: uncomment later
+            print("===================================================")
+            print("INFO: RSA GENERATOR STARTED")
+            print("INFO: started generating random string of numbers")
+            self.gen.setRandom()
             #using that string - generate RSA keys
-            self.keyRSA = RSA.generate(self.keySize)#, self.gen.getRandom)
+            print("INFO: started generating RSA keys")
+            self.keyRSA = RSA.generate(self.keySize, self.gen.getRandom)
             #save public key to string variable for editing purposes
             self.currentPublicKey = self.keyRSA.public_key().export_key()
             self.origPublicKey = self.keyRSA.public_key().export_key()
+            print("INFO: done generating RSA keys")
+            print("===================================================")
 
             #exit from this function and dismiss INFO popup
             self.generatingRSA = False
@@ -595,16 +628,17 @@ class DigitalSignatureTRNGApp(App):
     def hashReceived(self, instance):
         if(self.ifHashedOriginal == False):                                     # if the user would like to HASH received message and check result 
             print("ERROR: original message not hashed!")                        # before HASHing the original message
-            #TODO: MOŻE poprawić wygląd widgetu w popupie
             errorHashingMessage = Label(
                 size_hint = (1, 0.9),
                 text = 'First hash the original message (step 4)',
+                font_name = Constants.MAIN_FONT_LOCATION,
                 font_size = '30sp'
             )
             errorHashingButton = Button(
                 size_hint = (1, 0.1),
                 text = 'CLOSE',
                 font_size = '20sp',
+                font_name = Constants.MAIN_FONT_LOCATION,
                 background_color = Constants.REGULAR_BUTTON_BCKGRD
             )
             
@@ -625,10 +659,12 @@ class DigitalSignatureTRNGApp(App):
             hashReceivedMess = SHA3_256.new(bytes(self.receivedInput.text, 'utf-8'))
 
             digitalSignatureBox = BoxLayout(orientation = 'vertical')
-            digitalSignatureInfoBox = BoxLayout(size_hint=(1, 0.9))
+            digitalSignatureInfoBox = BoxLayout(size_hint=(1, 0.6))
+            digitalSignatureInfoAnchor = AnchorLayout(size_hint=(1,0.9), anchor_y='center')
             digitalSignatureButton = Button(
                 size_hint = (1, 0.1),
                 text = 'CLOSE',
+                font_name = Constants.MAIN_FONT_LOCATION,
                 font_size = '20sp',
                 background_color = Constants.REGULAR_BUTTON_BCKGRD
             )
@@ -638,35 +674,43 @@ class DigitalSignatureTRNGApp(App):
                 pkcs1_15.new(receivedKey).verify(hashReceivedMess, self.signature)
                 print("INFO: same message was received!")
 
-                #TODO: zmienić wygląd Widgetów w Popupie, kolory etc...
                 #if there was a positive feedback
                 #display "correct signature" popup
                 digitalSignatureImg = Image(
                     source = r'images/success_green.png'
                 )
                 digitalSignatureMess = Label(
-                    text = 'It worked!',
-                    font_size = '20sp',
-                    color = '#EE11FF',
+                    text = 'Original message\nis the same as\nthe received message!',
+                    halign = 'center',
+                    font_name = Constants.MAIN_FONT_LOCATION,
+                    font_size = '22sp',
+                    color = Constants.LABEL_POPUP_GREYISH,
                 )
             except(ValueError, TypeError):
                 print("ERROR: The signature is invalid!")
 
-                #TODO: zmienić wygląd Widgetów w Popupie, kolory etc...
                 #if there was a negative feedback
                 #display "invalid signature" popup
                 digitalSignatureImg = Image(
                     source = r'images/error_red.png'
                 )
                 digitalSignatureMess = Label(
-                    text = 'Signature invalid!',
-                    font_size = '20sp',
-                    color = '#EE11FF'
+                    text = Constants.RECEIVED_MESSAGE_ERROR,
+                    font_name = Constants.MAIN_FONT_LOCATION,
+                    halign = 'center',
+                    font_size = '22sp',
+                    color = Constants.LABEL_POPUP_GREYISH
                 )
+
+            
 
             digitalSignatureInfoBox.add_widget(digitalSignatureImg)
             digitalSignatureInfoBox.add_widget(digitalSignatureMess)
-            digitalSignatureBox.add_widget(digitalSignatureInfoBox)
+
+
+
+            digitalSignatureInfoAnchor.add_widget(digitalSignatureInfoBox)
+            digitalSignatureBox.add_widget(digitalSignatureInfoAnchor)
             digitalSignatureBox.add_widget(digitalSignatureButton)
 
             #print DEBUG info and display Popup with a result
@@ -682,6 +726,13 @@ class DigitalSignatureTRNGApp(App):
             digitalSignatureButton.bind(on_press=digitalSignaturePopUp.dismiss)
 
             #INFO: there is no need for disabling this button as compared to "hashOriginal"
+
+    def checkWindowSize(self, instance):
+        if(Window.size == Constants.DEFAULT_WINDOW_SIZE):
+            Constants.RECEIVED_MESSAGE_ERROR = "Received message\ndoesn't match\nor\npublic key is invalid!"
+        else:
+            Constants.RECEIVED_MESSAGE_ERROR = "Received message doesn't match\nor\npublic key is invalid!"
+
         
 
 
