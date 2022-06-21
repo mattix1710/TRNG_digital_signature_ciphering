@@ -1,12 +1,18 @@
 # all the important imports:
 #----------------------------
-from cgitb import reset
-from logging.config import RESET_ERROR
+# my local classes and files
 from TRNgenClass import TRNG
+import Constants
+# modules
 from Crypto.PublicKey import RSA
-import time
+from Crypto.Hash import SHA3_256
+from Crypto.Signature import pkcs1_15
 import pyperclip
+#
+#============================
 
+# all the kivy imports
+#----------------------------
 import kivy
 kivy.require('2.1.0')
 from kivy.app import App
@@ -14,22 +20,17 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.anchorlayout import AnchorLayout
-
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
-from kivy.graphics import Color, Rectangle, Line
 from kivy.core.window import Window
 from kivy.clock import Clock
 from kivy.uix.popup import Popup
 from kivy.uix.image import Image
-from kivy.uix.progressbar import ProgressBar
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.behaviors import ButtonBehavior
-import Constants
-
-BUTTON_COLOR = '#00FFC0'
-INITIAL_GEN_BUTTON_COLOR = '#00FF00'
+#
+#============================
 
 class ImageButton(ButtonBehavior, Image):               #INFO: IDEA from https://stackoverflow.com/questions/48509828/kivy-image-button-stretching
     pass
@@ -50,6 +51,7 @@ class DigitalSignatureTRNGApp(App):
         self.generatingRSA = False
         self.origTextBeforeChange = ''
         self.ifHashedOriginal = False
+        self.signature = ''
 
     def build(self):
         #returns a window object with all it's widgets
@@ -82,7 +84,8 @@ class DigitalSignatureTRNGApp(App):
             text = 'Generate RSA keys',
             font_size = '20sp',
             bold = True,
-            background_color = INITIAL_GEN_BUTTON_COLOR,
+            background_normal = '',                                     #get rid of color tint of gray after implementing "background_color"
+            background_color = Constants.INITIAL_GEN_BUTTON_COLOR,
             outline_color = Constants.OUTLINE_COLOR_TUPLE,
             outline_width = Constants.OUTLINE_WIDTH
         )
@@ -449,11 +452,8 @@ class DigitalSignatureTRNGApp(App):
         self.mainLayout.add_widget(self.RSAsection)
         self.mainLayout.add_widget(self.messageSection)
 
-        #self.mainBorderLayout = AnchorLayout(anchor_x='center', anchor_y='center')
-        #self.mainBorderLayout.add_widget(self.mainLayout)
-
         #TODO: uncomment after debugging
-        #self.disableButtons()
+        self.disableButtons()
 
         return self.mainLayout
 
@@ -496,7 +496,7 @@ class DigitalSignatureTRNGApp(App):
 
     def savePublicKey(self, instance):
         self.currentPublicKey = bytes(self.editText.text, 'utf-8')      #INFO: really IMPORTANT - key needs to be saved as bytes() instance
-        print("EDITED PUBLIC KEY")
+        print("INFO: edited PUBLIC key")
         self.editKeyPopUp.dismiss()
 
     def discardEditingPublicKey(self, instance):
@@ -517,10 +517,7 @@ class DigitalSignatureTRNGApp(App):
         self.receivedInput.text = self.originalInput.text
 
     def generateRSAkeys(self, instance):        #INFO: changing Label doesn't work immediately!!
-        #process with generation random string of numbers
-        # self.gen.setRandom()
-
-        # self.keyRSA = RSA.generate(self.keySize, self.gen.getRandom)
+        #proceed with generation random string of numbers
 
         #display PopUp
         #TODO: change GENERATING RSA popup colours!
@@ -552,14 +549,14 @@ class DigitalSignatureTRNGApp(App):
         #set flag - generating RSA
         self.generatingRSA = True
         self.disableButtons()
-        self.generatorButton.background_color = BUTTON_COLOR
+        self.generatorButton.background_color = Constants.GENERATOR_BUTTON_BCKGRD
     
     def launchGenerator(self, instance):
         if(self.generatingRSA == True):
             #generate random string of numbers
-            self.gen.setRandom()
+            #self.gen.setRandom()               #TODO: uncomment later
             #using that string - generate RSA keys
-            self.keyRSA = RSA.generate(self.keySize, self.gen.getRandom)
+            self.keyRSA = RSA.generate(self.keySize)#, self.gen.getRandom)
             #save public key to string variable for editing purposes
             self.currentPublicKey = self.keyRSA.public_key().export_key()
             self.origPublicKey = self.keyRSA.public_key().export_key()
@@ -580,7 +577,10 @@ class DigitalSignatureTRNGApp(App):
         self.buttonGridSection.disabled = False
 
     def hashOriginal(self, instance):
-        #TODO: hashing & cyphering logic of a message
+        hashMess = SHA3_256.new(bytes(self.originalInput.text, 'utf-8'))        # needs to be casted to bytes(), otherwise throws an Error (string cannot be passed in C)
+        self.signature = pkcs1_15.new(self.keyRSA).sign(hashMess)
+
+        #print DEBUG info, set "ifHashedOriginal" flag and disable button
         print("INFO: original message hashed")
         self.cypherButtonOrig.disabled = True
         self.ifHashedOriginal = True
@@ -593,8 +593,9 @@ class DigitalSignatureTRNGApp(App):
             self.ifHashedOriginal = False
 
     def hashReceived(self, instance):
-        if(self.ifHashedOriginal == False):                             #if the user would like to HASH received message and check result before HASHing original message
-            print("ERROR: original message not hashed!")
+        if(self.ifHashedOriginal == False):                                     # if the user would like to HASH received message and check result 
+            print("ERROR: original message not hashed!")                        # before HASHing the original message
+            #TODO: MOŻE poprawić wygląd widgetu w popupie
             errorHashingMessage = Label(
                 size_hint = (1, 0.9),
                 text = 'First hash the original message (step 4)',
@@ -607,11 +608,9 @@ class DigitalSignatureTRNGApp(App):
                 background_color = Constants.REGULAR_BUTTON_BCKGRD
             )
             
-
             errorHashingBox = BoxLayout(orientation = 'vertical')
             errorHashingBox.add_widget(errorHashingMessage)
             errorHashingBox.add_widget(errorHashingButton)
-
 
             errorHashingPopUp = Popup(
                 title = 'ERROR: original message not hashed!',
@@ -623,9 +622,65 @@ class DigitalSignatureTRNGApp(App):
             errorHashingPopUp.open()
             errorHashingButton.bind(on_press = errorHashingPopUp.dismiss)
         else:
-            #TODO: hashing, decyphering & checking if same message
+            hashReceivedMess = SHA3_256.new(bytes(self.receivedInput.text, 'utf-8'))
+
+            digitalSignatureBox = BoxLayout(orientation = 'vertical')
+            digitalSignatureInfoBox = BoxLayout(size_hint=(1, 0.9))
+            digitalSignatureButton = Button(
+                size_hint = (1, 0.1),
+                text = 'CLOSE',
+                font_size = '20sp',
+                background_color = Constants.REGULAR_BUTTON_BCKGRD
+            )
+
+            try:
+                receivedKey = RSA.import_key(self.currentPublicKey)
+                pkcs1_15.new(receivedKey).verify(hashReceivedMess, self.signature)
+                print("INFO: same message was received!")
+
+                #TODO: zmienić wygląd Widgetów w Popupie, kolory etc...
+                #if there was a positive feedback
+                #display "correct signature" popup
+                digitalSignatureImg = Image(
+                    source = r'images/success_green.png'
+                )
+                digitalSignatureMess = Label(
+                    text = 'It worked!',
+                    font_size = '20sp',
+                    color = '#EE11FF',
+                )
+            except(ValueError, TypeError):
+                print("ERROR: The signature is invalid!")
+
+                #TODO: zmienić wygląd Widgetów w Popupie, kolory etc...
+                #if there was a negative feedback
+                #display "invalid signature" popup
+                digitalSignatureImg = Image(
+                    source = r'images/error_red.png'
+                )
+                digitalSignatureMess = Label(
+                    text = 'Signature invalid!',
+                    font_size = '20sp',
+                    color = '#EE11FF'
+                )
+
+            digitalSignatureInfoBox.add_widget(digitalSignatureImg)
+            digitalSignatureInfoBox.add_widget(digitalSignatureMess)
+            digitalSignatureBox.add_widget(digitalSignatureInfoBox)
+            digitalSignatureBox.add_widget(digitalSignatureButton)
+
+            #print DEBUG info and display Popup with a result
             print("INFO: received message hashed and compared to original")
-            #TODO: display POPUP with a result!!
+            digitalSignaturePopUp = Popup(
+                title = 'Digital signature confirmation',
+                content = digitalSignatureBox,
+                size_hint=(0.8,0.8),
+                background_color = [0,0,0,0.9],
+                auto_dismiss=False
+            )
+            digitalSignaturePopUp.open()
+            digitalSignatureButton.bind(on_press=digitalSignaturePopUp.dismiss)
+
             #INFO: there is no need for disabling this button as compared to "hashOriginal"
         
 

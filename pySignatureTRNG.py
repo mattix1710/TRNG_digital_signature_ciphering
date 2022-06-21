@@ -28,11 +28,18 @@ class textTest(App):
     def layoutGUI(self):
         box = BoxLayout(orientation = 'vertical')
         self.textInput = TextInput(size_hint=(1,0.8), text=self.publicKey)
-        button = Button(size_hint=(1,0.2), text='Save')
 
-        button.bind(on_press=self.saveText)
+        buttonBox = BoxLayout(size_hint=(1,0.2))
+        saveButton = Button(text='Save')
+        signatureButton = Button(text = 'Check signature')
+        buttonBox.add_widget(signatureButton)
+        buttonBox.add_widget(saveButton)
+
+        saveButton.bind(on_press=self.saveText)
+        signatureButton.bind(on_press=self.signatureCheck)
+
         box.add_widget(self.textInput)
-        box.add_widget(button)
+        box.add_widget(buttonBox)
         return box
 
     def saveText(self, instance):
@@ -42,17 +49,21 @@ class textTest(App):
         print(type(myNewKey))
         print(myNewKey)
 
-        receivedKey = RSA.import_key(myNewKey)
-        hashReceivedMess = SHA3_256.new(bytes(self.mess, 'utf-8'))
+        self.publicKey = myNewKey
 
-        try:
-            pkcs1_15.new(receivedKey).verify(hashReceivedMess, self.signature)
-            print("Same message!")
-        except(ValueError, TypeError):
-            print("The signature is invalid!")
+        # receivedKey = RSA.import_key(myNewKey)
+        # hashReceivedMess = SHA3_256.new(bytes(self.mess, 'utf-8'))
 
-    def getNewKey(self):
-        return self.myNewKey
+        # try:
+        #     pkcs1_15.new(receivedKey).verify(hashReceivedMess, self.signature)
+        #     print("Same message!")
+        # except(ValueError, TypeError):
+        #     print("The signature is invalid!")
+        
+    def signatureCheck(self, instance):
+        # print(self.publicKey)
+        receivedKey = RSA.import_key(self.publicKey)
+        
 
     def generateRSA(self):
         self.key = RSA.generate(1024)
