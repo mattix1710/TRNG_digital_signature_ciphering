@@ -1,7 +1,6 @@
 # all the important imports:
 #----------------------------
 # my local classes and files
-from turtle import window_width
 from TRNgenClass import TRNG
 import Constants
 # modules
@@ -50,6 +49,7 @@ class DigitalSignatureTRNGApp(App):
         self.gen = TRNG()
         self.keyRSA = ""
         self.generatingRSA = False
+        self.ifNotGenerated = True
         self.origTextBeforeChange = ''
         self.ifHashedOriginal = False
         self.signature = ''
@@ -192,7 +192,7 @@ class DigitalSignatureTRNGApp(App):
             bold = True,
             background_color = Constants.EDIT_PUBLIC_BUTTON_BCKGRD,
             color = Constants.EDIT_PUBLIC_BUTTON_TEXT,
-            outline_color = Constants.OUTLINE_COLOR_TUPLE,
+            outline_color = Constants.OUTLINE_COLOR_EDIT_TUPLE,
             outline_width = Constants.OUTLINE_WIDTH
         )
         resetPublicButton = Button(
@@ -622,7 +622,8 @@ class DigitalSignatureTRNGApp(App):
         if(self.origTextBeforeChange != self.originalInput.text):
             print("INFO: original message changed")
             self.origTextBeforeChange = self.originalInput.text
-            self.cypherButtonOrig.disabled = False
+            if(self.ifNotGenerated == False):
+                self.cypherButtonOrig.disabled = False
             self.ifHashedOriginal = False
 
     def hashReceived(self, instance):

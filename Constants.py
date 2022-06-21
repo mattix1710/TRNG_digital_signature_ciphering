@@ -12,6 +12,7 @@ MESSAGE_KEY_LENGTH_TEXT     = '#d6d642'
 DIMMED_GREEN_COLOUR         = '#74bc5f'
 LABEL_POPUP_GREYISH         = '#CCCCCC'
 OUTLINE_COLOR_TUPLE         = (0.25, 0.25, 0.25)
+OUTLINE_COLOR_EDIT_TUPLE    = (0.58, 0.13, 0.08)
 OUTLINE_WIDTH               = 2
 MAIN_FONT_LOCATION          = 'fonts/Moon Bold.otf'
 MAIN_FONT_BOLD_LOCATION     = 'fonts/PollyRounded-Bold.otf'
