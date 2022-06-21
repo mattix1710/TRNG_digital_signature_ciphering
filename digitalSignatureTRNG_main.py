@@ -487,7 +487,7 @@ class DigitalSignatureTRNGApp(App):
         #create TextInput and Button for saving
         self.editText = TextInput(
             hint_text = 'Here should be your RSA public key',
-            text = self.currentPublicKey, 
+            text = self.currentPublicKey,
             size_hint=(1, 0.8))
 
         layoutPopUpButtonsBox = BoxLayout(size_hint=(1,0.2))
@@ -514,6 +514,7 @@ class DigitalSignatureTRNGApp(App):
             title = 'Edit RSA public key',
             content = relative,
             size_hint=(0.8,0.8),
+            background_color = [0, 0, 0, 0.9],
             auto_dismiss=False,
         )
 
@@ -595,6 +596,7 @@ class DigitalSignatureTRNGApp(App):
             print("===================================================")
 
             #exit from this function and dismiss INFO popup
+            self.ifNotGenerated = False
             self.generatingRSA = False
             self.enableAllWidgets()
             self.generatePopup.dismiss()
@@ -631,7 +633,8 @@ class DigitalSignatureTRNGApp(App):
             print("ERROR: original message not hashed!")                        # before HASHing the original message
             errorHashingMessage = Label(
                 size_hint = (1, 0.9),
-                text = 'First hash the original message (step 4)',
+                text = 'First hash the original message\n(step 4)',
+                halign = 'center',
                 font_name = Constants.MAIN_FONT_LOCATION,
                 font_size = '30sp'
             )
